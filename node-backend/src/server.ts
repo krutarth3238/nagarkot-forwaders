@@ -177,8 +177,8 @@ app.get('/api/shipments/:id', requireAuth, async (req, res): Promise<any> => {
 
 app.post('/api/shipments', requireAuth, async (req, res): Promise<any> => {
   const s = req.body;
-  if (!s.referenceNumber || !s.title || !s.origin || !s.destination || !s.carrier) {
-    return res.status(400).json({ error: 'Missing required fields' });
+  if (!s.referenceNumber || !s.title || !s.origin || !s.destination) {
+    return res.status(400).json({ error: 'Missing required fields: referenceNumber, title, origin, destination' });
   }
 
   const client = await pool.connect();
@@ -209,21 +209,20 @@ app.post('/api/shipments', requireAuth, async (req, res): Promise<any> => {
     
     const shipment = created[0];
     
-    const historyId = uuidv4();
     await client.query(
       `INSERT INTO shipment_history (
-        id, shipment_id, status, operational_status_text, location, milestone_title, description, is_active
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        shipment_id, update_type, update_description, location, performed_by
+      ) VALUES ($1, $2, $3, $4, $5)`,
       [
-        historyId, s_id, status, shipment.operational_status_text, 
-        (shipment.origin_name || shipment.origin) + ' Terminal', 
-        'Booking Confirmed & Cargo Staged', 
+        s_id,
+        'Booking Confirmed',
         'Initial consignment booking registered under reference ' + shipment.reference_number,
-        true
+        (shipment.origin_name || shipment.origin) + ' Terminal',
+        'Peter Parker'
       ]
     );
     
-    const { rows: history } = await client.query(`SELECT * FROM shipment_history WHERE shipment_id = $1 ORDER BY timestamp ASC`, [s_id]);
+    const { rows: history } = await client.query(`SELECT * FROM shipment_history WHERE shipment_id = $1 ORDER BY created_at ASC`, [s_id]);
     shipment.milestones = history;
     
     await client.query('COMMIT');
@@ -268,22 +267,15 @@ app.patch('/api/shipments/:id/status', requireAuth, async (req, res): Promise<an
     const h_desc = description || `Operational status transitioned to: ${shipment.operational_status_text || shipment.status}`;
     
     await client.query(
-      `UPDATE shipment_history SET is_active = false WHERE shipment_id = $1`,
-      [id]
-    );
-    
-    const historyId = uuidv4();
-    await client.query(
       `INSERT INTO shipment_history (
-        id, shipment_id, status, operational_status_text, location, milestone_title, description, is_active
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        shipment_id, update_type, update_description, location, performed_by
+      ) VALUES ($1, $2, $3, $4, $5)`,
       [
-        historyId, id, shipment.status, shipment.operational_status_text,
-        h_location, h_title, h_desc, true
+        id, h_title, h_desc, h_location, 'Peter Parker'
       ]
     );
     
-    const { rows: history } = await client.query(`SELECT * FROM shipment_history WHERE shipment_id = $1 ORDER BY timestamp ASC`, [id]);
+    const { rows: history } = await client.query(`SELECT * FROM shipment_history WHERE shipment_id = $1 ORDER BY created_at ASC`, [id]);
     shipment.milestones = history;
 
     await client.query('COMMIT');
