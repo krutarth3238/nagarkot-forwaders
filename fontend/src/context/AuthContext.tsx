@@ -107,19 +107,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = useCallback(async (email: string, password: string) => {
     setError(null);
-
-    const cred = await signInWithEmailAndPassword(
-      firebaseAuth,
-      email,
-      password
-    );
-
-    const idToken = await cred.user.getIdToken();
-
-    await exchangeIdTokenForSession(
-      idToken,
-      'Invalid email or password'
-    );
+    try {
+      const cred = await signInWithEmailAndPassword(firebaseAuth, email, password);
+      const idToken = await cred.user.getIdToken();
+      await exchangeIdTokenForSession(idToken, 'Invalid email or password');
+    } catch (err: any) {
+      setError(err.message || 'Invalid email or password');
+      throw err;
+    }
   }, []);
 
   const signUp = useCallback(async (
@@ -128,40 +123,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     password: string
   ) => {
     setError(null);
-
-    const cred = await createUserWithEmailAndPassword(
-      firebaseAuth,
-      email,
-      password
-    );
-
-    if (fullName) {
-      await updateProfile(cred.user, { displayName: fullName });
+    try {
+      const cred = await createUserWithEmailAndPassword(firebaseAuth, email, password);
+      if (fullName) {
+        await updateProfile(cred.user, { displayName: fullName });
+      }
+      const idToken = await cred.user.getIdToken();
+      await exchangeIdTokenForSession(idToken, 'Could not create account', fullName);
+    } catch (err: any) {
+      setError(err.message || 'Could not create account');
+      throw err;
     }
-
-    const idToken = await cred.user.getIdToken();
-
-    await exchangeIdTokenForSession(
-      idToken,
-      'Could not create account',
-      fullName
-    );
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
     setError(null);
-
-    const result = await signInWithPopup(
-      firebaseAuth,
-      googleProvider
-    );
-
-    const idToken = await result.user.getIdToken();
-
-    await exchangeIdTokenForSession(
-      idToken,
-      'Google sign-in failed'
-    );
+    try {
+      const result = await signInWithPopup(firebaseAuth, googleProvider);
+      const idToken = await result.user.getIdToken();
+      await exchangeIdTokenForSession(idToken, 'Google sign in failed', result.user.displayName || undefined);
+    } catch (err: any) {
+      setError(err.message || 'Google sign in failed');
+      throw err;
+    }
   }, []);
 
   const signOut = useCallback(async () => {
