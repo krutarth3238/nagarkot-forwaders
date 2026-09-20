@@ -131,7 +131,7 @@ app.get('/api/shipments', requireAuth, async (req, res) => {
     );
     
     const { rows: histories } = await pool.query(
-      `SELECT * FROM shipment_history WHERE shipment_id IN (SELECT id FROM shipments WHERE user_id = $1) ORDER BY timestamp ASC`,
+      `SELECT * FROM shipment_history WHERE shipment_id IN (SELECT id FROM shipments WHERE user_id = $1) ORDER BY created_at ASC`,
       [req.userId]
     );
 
@@ -147,9 +147,9 @@ app.get('/api/shipments', requireAuth, async (req, res) => {
     }));
 
     res.json({ shipments: mappedShipments });
-  } catch (err) {
+  } catch (err: any) {
     console.error(err);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: err.message || 'Internal server error' });
   }
 });
 
@@ -163,15 +163,15 @@ app.get('/api/shipments/:id', requireAuth, async (req, res): Promise<any> => {
     
     const shipment = shipments[0];
     const { rows: history } = await pool.query(
-      `SELECT * FROM shipment_history WHERE shipment_id = $1 ORDER BY timestamp ASC`,
+      `SELECT * FROM shipment_history WHERE shipment_id = $1 ORDER BY created_at ASC`,
       [shipment.id]
     );
     shipment.milestones = history;
     
     res.json({ shipment });
-  } catch (err) {
+  } catch (err: any) {
     console.error(err);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: err.message || 'Internal server error' });
   }
 });
 
