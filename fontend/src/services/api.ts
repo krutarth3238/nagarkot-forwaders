@@ -56,14 +56,17 @@ function mapShipment(raw: any): Shipment {
     pieces: raw.pieces ?? null,
     consignee: raw.consignee ?? null,
     history: Array.isArray(raw.milestones) ? raw.milestones.map((m: any) => ({
-      id: m.id,
-      status: m.status,
-      timestamp: m.timestamp,
-      location: m.location,
-      title: m.milestone_title,
-      description: m.description,
-      isActive: m.is_active
+      id: String(m.id),
+      status: m.update_type ?? m.status ?? '',
+      timestamp: m.created_at ?? m.timestamp ?? '',
+      location: m.location ?? '',
+      title: m.update_type ?? m.milestone_title ?? '',
+      description: m.update_description ?? m.description ?? '',
+      isActive: m.is_active ?? false,
+      performedBy: m.performed_by ?? null,
     })) : [],
+    documents: raw.documents ?? [],
+    createdAt: raw.created_at ?? raw.createdAt ?? '',
   };
 }
 
