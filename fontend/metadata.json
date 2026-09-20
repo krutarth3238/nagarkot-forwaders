@@ -1,0 +1,6 @@
+{
+  "name": "Nagarkot Forwarders",
+  "description": "Enterprise Multi-Modal Freight Operations & Customs Orchestration platform with real-time shipment status tracking, predictive corridor analytics, and enterprise portal.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
