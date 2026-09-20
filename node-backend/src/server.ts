@@ -176,17 +176,24 @@ app.get('/api/shipments/:id', requireAuth, async (req, res): Promise<any> => {
 });
 
 app.post('/api/shipments', requireAuth, async (req, res): Promise<any> => {
-  const s = req.body;
-  if (!s.referenceNumber || !s.title || !s.origin || !s.destination) {
-    return res.status(400).json({ error: 'Missing required fields: referenceNumber, title, origin, destination' });
+  const b = req.body;
+  // Support both snake_case (sent by frontend mapper) and camelCase
+  const referenceNumber = b.reference_number ?? b.referenceNumber;
+  const title = b.title;
+  const origin = b.origin;
+  const destination = b.destination;
+
+  if (!referenceNumber || !title || !origin || !destination) {
+    return res.status(400).json({ error: 'Missing required fields: reference_number, title, origin, destination' });
   }
 
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     
-    const s_id = `NF-${Math.floor(Math.random() * 90000) + 10000}-${s.destination.substring(s.destination.length - 3)}`;
-    const status = s.status || 'Booked';
+    const destCode = destination.length >= 3 ? destination.substring(destination.length - 3) : destination;
+    const s_id = `NF-${Math.floor(Math.random() * 90000) + 10000}-${destCode}`;
+    const status = b.status || 'Booked';
     
     const { rows: created } = await client.query(
       `INSERT INTO shipments (
@@ -199,11 +206,22 @@ app.post('/api/shipments', requireAuth, async (req, res): Promise<any> => {
         $19, $20, $21, $22, $23, $24, NOW()
       ) RETURNING *`,
       [
-        s_id, req.userId, s.referenceNumber, s.title, s.mode || 'Air', status, s.badgeType || 'default',
-        s.origin, s.originName || '', s.destination, s.destinationName || '', s.corridorSubtext || '',
-        s.carrier, s.vesselOrFlight || '', s.expectedDeliveryDate || '', s.timeRemaining || '',
-        s.operationalStatusText || '', s.co2Footprint || '', s.isPriority || false, s.isReefer || false,
-        s.temperature || null, s.weight || null, s.pieces || null, s.consignee || null
+        s_id, req.userId, referenceNumber, title,
+        b.mode || 'Air', status, b.badge_type ?? b.badgeType ?? 'default',
+        origin, b.origin_name ?? b.originName ?? '',
+        destination, b.destination_name ?? b.destinationName ?? '',
+        b.corridor_subtext ?? b.corridorSubtext ?? '',
+        b.carrier ?? '', b.vessel_or_flight ?? b.vesselOrFlight ?? '',
+        b.expected_delivery_date ?? b.expectedDeliveryDate ?? '',
+        b.time_remaining ?? b.timeRemaining ?? '',
+        b.operational_status_text ?? b.operationalStatusText ?? '',
+        b.co2_footprint ?? b.co2Footprint ?? '',
+        b.is_priority ?? b.isPriority ?? false,
+        b.is_reefer ?? b.isReefer ?? false,
+        b.temperature ?? null,
+        b.weight ?? null,
+        b.pieces ?? null,
+        b.consignee ?? null
       ]
     );
     
