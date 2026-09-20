@@ -34,7 +34,7 @@ cd fontend
 npm install
 npm run dev
 ```
-The application will be accessible at `http://localhost:5173`. 
+The application will be accessible at `http://localhost:3000`. 
 *(Note: Login with `admin@nagarkot.com` / `123456` to access the admin dashboard).*
 
 ## Assumptions Made
