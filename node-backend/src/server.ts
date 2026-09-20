@@ -98,8 +98,8 @@ app.post('/api/auth/session', async (req, res): Promise<any> => {
       if (!user) {
         const final_name = request_full_name || decoded.name || email.split('@')[0] || 'User';
         const insertRes = await client.query(
-          `INSERT INTO users (id, firebase_uid, email, full_name, role) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-          [uuidv4(), firebase_uid, email, final_name, 'Operations Officer']
+          `INSERT INTO users (firebase_uid, email, full_name, role) VALUES ($1, $2, $3, $4) RETURNING *`,
+          [firebase_uid, email, final_name, 'Operations Officer']
         );
         user = insertRes.rows[0];
       }
