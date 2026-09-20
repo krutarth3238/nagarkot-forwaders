@@ -65,9 +65,9 @@ const requireAuth = async (req: Request, res: Response, next: NextFunction): Pro
     req.user = decoded;
     req.userId = decoded.uid;
     next();
-  } catch (err) {
+  } catch (err: any) {
     console.error("Firebase token verification error:", err);
-    return res.status(401).json({ error: 'Invalid Firebase ID token' });
+    return res.status(401).json({ error: err.message || 'Invalid Firebase ID token' });
   }
 };
 
@@ -117,9 +117,9 @@ app.post('/api/auth/session', async (req, res): Promise<any> => {
     } finally {
       client.release();
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error("Firebase token verification error:", err);
-    return res.status(401).json({ error: 'Invalid Firebase ID token' });
+    return res.status(401).json({ error: err.message || 'Invalid Firebase ID token' });
   }
 });
 
